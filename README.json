@@ -1,0 +1,14 @@
+{
+  "name": "terraform-aws-ebs-volume",
+  "repo_url": "https://github.com/Infrastrukturait/terraform-aws-ebs-volume",
+  "license": "GPLv3",
+  "authors": [
+    {
+      "name": "Rafał Masiarek",
+      "email": "rafal@masiarek.pl",
+      "github": "rafalmasiarek",
+      "website": "https://masiarek.pl"
+    }
+  ],
+  "context": []
+}
