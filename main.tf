@@ -1,7 +1,6 @@
 locals {
-    iops                   = contains(["io1", "io2", "gp3"], var.type)  ? var.iops : ""
+    iops                   = contains(["io1", "io2", "gp3"], var.type)  ? var.iops : 0
     multi_attach_enabled   = contains(["io1", "io2"], var.type) ? var.multi_attach_enabled : false
-    throughput             = var.type == "gp3" ? var.throughput : ""
 }
 
 
@@ -16,7 +15,6 @@ resource "aws_ebs_volume" "this" {
   outpost_arn          = var.outpost_arn
   type                 = var.type
   kms_key_id           = var.kms_key_id
-  throughput           = var.throughput 
   tags                 = merge(
     var.tags,
     {
@@ -75,7 +73,7 @@ EOF
 
 # DLM lifecycle Policy
 resource "aws_iam_role_policy" "dlm_lifecycle_policy" {
-  name  = "dlm-lifecycle-policy"
+  name  = var.backup_ebs_role_policy_name
   role  = aws_iam_role.dlm_lifecycle_role.id
 
   policy  = <<EOF

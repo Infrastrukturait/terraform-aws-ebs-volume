@@ -10,7 +10,7 @@ variable "availability_zone" {
 
 variable "enable_backup" {
   type        = bool
-  description = "flag to turn on backups"
+  description = "Flag to turn on backups. Backup is by default enabled."
   default     = true
 }
 
@@ -43,7 +43,6 @@ variable "multi_attach_enabled" {
 
 variable "size" {
   type        = number
-  default     = 0
   description = "The size of the drive in GiBs"
 }
 
@@ -81,12 +80,6 @@ immediately deleted.
 EOT
 }
 
-variable "throughput" {
-  type        = number
-  default     = 0
-  description = "The throughput that the volume supports, in MiB/s. Only valid for `type` of `gp3`"
-}
-
 variable backup_ebs_period {
   type = number
   description = "frequency of snapshot in hours (valid values are `1`, `2`, `3`, `4`, `6`, `8`, `12`, or `24`)"
@@ -101,6 +94,12 @@ variable "backup_ebs_iam_role_name" {
   type        = string
   description = "The IAM role name for the DLM lifecyle policy"
   default     = "dlm-lifecycle-role"
+}
+
+variable "backup_ebs_role_policy_name" {
+  type        = string
+  description = "The  role name for the DLM lifecyle policy"
+  default     = "dlm-lifecycle-policy"  
 }
 
 variable "backup_ebs_retention" {
