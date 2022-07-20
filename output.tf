@@ -13,11 +13,11 @@ output "backup_hours" {
 }
 
 output "dlm_role_id" {
-  value       = aws_iam_role.dlm_lifecycle_role.id
+  value       = concat(aws_iam_role.dlm_lifecycle_role.*.id, [""])[0]
   description = "ID dlm lifecycle role"
 }
 
 output "dlm_policy_id" {
-  value       = aws_iam_role_policy.dlm_lifecycle_policy.id
+  value       = concat(aws_iam_role_policy.dlm_lifecycle_policy.*.id, [""])[0]
   description = "ID dlm lifecycle policy" 
 }
