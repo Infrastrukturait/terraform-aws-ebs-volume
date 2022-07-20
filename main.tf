@@ -53,6 +53,7 @@ locals {
 }
 
 resource "aws_iam_role" "dlm_lifecycle_role" {
+  count               = var.enable_backup ? 1 : 0
   name                = var.backup_ebs_iam_role_name
   assume_role_policy  = <<EOF
 {
@@ -73,8 +74,9 @@ EOF
 
 # DLM lifecycle Policy
 resource "aws_iam_role_policy" "dlm_lifecycle_policy" {
+  count = var.enable_backup ? 1 : 0
   name  = var.backup_ebs_role_policy_name
-  role  = aws_iam_role.dlm_lifecycle_role.id
+  role  = aws_iam_role.dlm_lifecycle_role.*.id
 
   policy  = <<EOF
 {
@@ -105,7 +107,7 @@ EOF
 resource "aws_dlm_lifecycle_policy" "backup" {
   count = var.enable_backup ? 1 : 0
   description = "${var.name} snapshots"
-  execution_role_arn = aws_iam_role.dlm_lifecycle_role.arn
+  execution_role_arn = aws_iam_role.dlm_lifecycle_role.*.arn
   policy_details {
     resource_types = ["VOLUME"]
     target_tags = {
