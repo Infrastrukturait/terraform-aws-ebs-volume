@@ -59,8 +59,8 @@ resource "random_integer" "minute" {
 }
 
 locals {
-  backup_ebs_start   = var.enable_backup && !local.random_start ? var.backup_ebs_start_time : format("%02d:%02d", random_integer.hour[0].result, random_integer.minute[0].result)
-  retention_count    = var.backup_ebs_retention * (24 / var.backup_ebs_period)
+  backup_ebs_start = var.enable_backup && !local.random_start ? var.backup_ebs_start_time : format("%02d:%02d", random_integer.hour[0].result, random_integer.minute[0].result)
+  retention_count  = var.backup_ebs_retention * (24 / var.backup_ebs_period)
 }
 
 resource "aws_iam_role" "dlm_lifecycle_role" {
@@ -86,7 +86,7 @@ EOF
 # DLM lifecycle Policy
 resource "aws_iam_role_policy" "dlm_lifecycle_policy" {
   count = var.enable_backup ? 1 : 0
-  name  = var.backup_ebs_role_policy_name
+  name  = local.backup_ebs_policy_role_name
   role  = aws_iam_role.dlm_lifecycle_role[0].id
 
   policy = <<EOF
