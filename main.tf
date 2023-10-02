@@ -48,7 +48,7 @@ resource random_integer minute {
 }
 
 locals {
-  backup_ebs_start   = !local.random_start ? var.backup_ebs_start_time : format("%02d:%02d", random_integer.hour[0].result, random_integer.minute[0].result)
+  backup_ebs_start   = var.enable_backup && !local.random_start ? var.backup_ebs_start_time : format("%02d:%02d", random_integer.hour[0].result, random_integer.minute[0].result)
   retention_count    = var.backup_ebs_retention * (24 / var.backup_ebs_period)
 }
 
