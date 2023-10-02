@@ -1,9 +1,8 @@
 name: "default-terraform-version"
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '00 1 * * *'
+    - cron: "0 1 * * *"
 
 jobs:
   update-tf-version:

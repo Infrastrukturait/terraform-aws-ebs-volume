@@ -8,30 +8,36 @@ Terraform module to create [AWS EBS (Elastic Block Storage)](https://aws.amazon.
 This module support support volume encrypt with [KMS](https://aws.amazon.com/kms/) key 🔑
 ## License
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ```text
-GNU GENERAL PUBLIC LICENSE
-Version 3, 29 June 2007
+The MIT License (MIT)
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+Source: <https://opensource.org/licenses/MIT>
 ```
+See [LICENSE](LICENSE) for full details.
 ## Authors
 - Rafał Masiarek | [website](https://masiarek.pl) | [email](mailto:rafal@masiarek.pl) | [github](https://github.com/rafalmasiarek)
 <!-- BEGIN_TF_DOCS -->
 ## Documentation
-
 
 
 ### Requirements
@@ -46,7 +52,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 2.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.38.0 |
 | <a name="provider_random"></a> [random](#provider\_random) | >= 3.0 |
 
 ### Modules
@@ -127,4 +133,9 @@ module "app_prod_bastion_ebs" {
     tags                        = module.app_prod_bastion_label.tags
 }
 ```
+
 <!-- END_TF_DOCS -->
+
+<!-- references -->
+
+[repo_link]: https://github.com/Infrastrukturait/terraform-aws-ebs-volume

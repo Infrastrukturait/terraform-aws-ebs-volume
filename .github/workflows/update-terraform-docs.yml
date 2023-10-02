@@ -1,0 +1,59 @@
+name: "update-docs"
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+
+jobs:
+  update-tf-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Render README.md
+        shell: bash
+        id: update
+        run: |
+          set -eux \
+          && case "$(uname -s)" in \
+            Darwin) OS="darwin" ;; \
+            Linux)  OS="linux"  ;; \
+            CYGWIN*|MINGW32*|MSYS*|MINGW*) OS="windows" ;; \
+            *) OS="unknown" ;; \
+          esac \
+          && case "$(uname -m)" in \
+            x86_64) ARCH="amd64" ;; \
+            arm64|aarch64)  ARCH="arm64" ;; \
+            *)      ARCH="unknown" ;; \
+          esac \
+          && curl -sS -L \
+            https://github.com/hairyhenderson/gomplate/releases/download/v3.11.5/gomplate_$OS-$ARCH \
+            -o /tmp/gomplate \
+          && chmod +x /tmp/gomplate \
+          && curl -sS -L \
+            https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-$OS-$ARCH.tar.gz \
+            -o /tmp/terraform-docs.tar.gz \
+          && tar -xzf /tmp/terraform-docs.tar.gz -C /tmp \
+          && chmod +x /tmp/terraform-docs \
+          && rm -f /tmp/terraform-docs.tar.gz \
+          && /tmp/terraform-docs markdown table --config .terraform-docs.yml --output-mode replace --output-file docs/terraform.md . \
+          && curl -sS -L \
+            https://raw.githubusercontent.com/Infrastrukturait/READMEgen/main/README.md.template | /tmp/gomplate -d config="./README.json" > ./README.md \
+          && rm -f /tmp/terraform-docs /tmp/gomplate
+          if git diff --no-patch --exit-code README.md; then
+            echo "No changes detected!"
+            echo "create_commit=false" >> $GITHUB_OUTPUT
+          else
+            echo "New version detected!"
+            echo "create_commit=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Git Auto-Commit
+        if: steps.update.outputs.create_commit == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Auto update README.md docs
+          commit_options: "--no-verify --signoff"
+
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+          commit_author: "github-actions[bot] <actions@github.com>"
