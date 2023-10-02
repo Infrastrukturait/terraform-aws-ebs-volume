@@ -1,0 +1,37 @@
+name: "default-terraform-version"
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+
+jobs:
+  update-tf-version:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Download terraform version file
+        shell: bash
+        id: update
+        run: |
+          curl -o .terraform-version -fsSL https://infrastrukturait.github.io/internal-terraform-version/terraform-version
+          if git diff --no-patch --exit-code .terraform-version; then
+            echo "No changes detected!"
+            echo "create_commit=false" >> $GITHUB_OUTPUT
+          else
+            echo "New version detected!"
+            echo "create_commit=true" >> $GITHUB_OUTPUT
+          fi
+      -
+        name: Git Auto-Commit
+        if: steps.update.outputs.create_commit == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Auto update default terraform version
+          commit_options: '--no-verify --signoff'
+
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+          commit_author: "github-actions[bot] <actions@github.com>"

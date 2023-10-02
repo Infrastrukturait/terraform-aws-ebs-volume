@@ -8,46 +8,52 @@ Terraform module to create [AWS EBS (Elastic Block Storage)](https://aws.amazon.
 This module support support volume encrypt with [KMS](https://aws.amazon.com/kms/) key 🔑
 ## License
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ```text
-GNU GENERAL PUBLIC LICENSE
-Version 3, 29 June 2007
+The MIT License (MIT)
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+Source: <https://opensource.org/licenses/MIT>
 ```
+See [LICENSE](LICENSE) for full details.
 ## Authors
 - Rafał Masiarek | [website](https://masiarek.pl) | [email](mailto:rafal@masiarek.pl) | [github](https://github.com/rafalmasiarek)
 <!-- BEGIN_TF_DOCS -->
 ## Documentation
 
 
-
 ### Requirements
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 2.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.9.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.0 |
 
 ### Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 2.0 |
-| <a name="provider_random"></a> [random](#provider\_random) | >= 3.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.38.0 |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.5.1 |
 
 ### Modules
 
@@ -63,6 +69,7 @@ No modules.
 | [aws_iam_role_policy.dlm_lifecycle_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [random_integer.hour](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) | resource |
 | [random_integer.minute](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) | resource |
+| [random_string.name_suffix](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 
 ### Inputs
 
@@ -71,14 +78,15 @@ No modules.
 | <a name="input_availability_zone"></a> [availability\_zone](#input\_availability\_zone) | Availability Zone where EBS volume will exist. | `string` | n/a | yes |
 | <a name="input_backup_ebs_iam_role_name"></a> [backup\_ebs\_iam\_role\_name](#input\_backup\_ebs\_iam\_role\_name) | The IAM role name for the DLM lifecyle policy | `string` | `"dlm-lifecycle-role"` | no |
 | <a name="input_backup_ebs_period"></a> [backup\_ebs\_period](#input\_backup\_ebs\_period) | frequency of snapshot in hours (valid values are `1`, `2`, `3`, `4`, `6`, `8`, `12`, or `24`) | `number` | `24` | no |
+| <a name="input_backup_ebs_policy_role_name"></a> [backup\_ebs\_policy\_role\_name](#input\_backup\_ebs\_policy\_role\_name) | The  role name for the DLM lifecyle policy | `string` | `"dlm-lifecycle-policy"` | no |
 | <a name="input_backup_ebs_retention"></a> [backup\_ebs\_retention](#input\_backup\_ebs\_retention) | retention period in days | `number` | `7` | no |
-| <a name="input_backup_ebs_role_policy_name"></a> [backup\_ebs\_role\_policy\_name](#input\_backup\_ebs\_role\_policy\_name) | The  role name for the DLM lifecyle policy | `string` | `"dlm-lifecycle-policy"` | no |
 | <a name="input_backup_ebs_start_time"></a> [backup\_ebs\_start\_time](#input\_backup\_ebs\_start\_time) | start time in 24 hour format (default is a random time) | `string` | `""` | no |
+| <a name="input_create_name_suffix"></a> [create\_name\_suffix](#input\_create\_name\_suffix) | always add a random suffix in a resource name. | `bool` | `true` | no |
 | <a name="input_enable_backup"></a> [enable\_backup](#input\_enable\_backup) | Flag to turn on backups. Backup is by default enabled. | `bool` | `true` | no |
 | <a name="input_encrypted"></a> [encrypted](#input\_encrypted) | If true, the disk will be encrypted. | `bool` | `false` | no |
-| <a name="input_final_snapshot"></a> [final\_snapshot](#input\_final\_snapshot) | If true, snapshot will be created before volume deletion. <br>Any tags on the volume will be migrated to the snapshot. **BE AWARE** by default is set to `false`. | `bool` | `false` | no |
+| <a name="input_final_snapshot"></a> [final\_snapshot](#input\_final\_snapshot) | If true, snapshot will be created before volume deletion.<br>Any tags on the volume will be migrated to the snapshot. **BE AWARE** by default is set to `false`. | `bool` | `false` | no |
 | <a name="input_iops"></a> [iops](#input\_iops) | Amount of IOPS to provision for the disk. Only valid for `type` of `io1`, `io2` or `gp3`. | `number` | `0` | no |
-| <a name="input_kms_key_id"></a> [kms\_key\_id](#input\_kms\_key\_id) | The ARN for the KMS encryption key. When specifying `kms_key_id`, `encrypted` needs to be set to **true**. <br>Note: Terraform must be running with credentials which have the `GenerateDataKeyWithoutPlaintext` permission on the specified KMS key <br>as required by the [EBS KMS CMK volume provisioning process](https://docs.aws.amazon.com/kms/latest/developerguide/services-ebs.html#ebs-cmk) to prevent a volume from being created and almost <br>immediately deleted. | `string` | `""` | no |
+| <a name="input_kms_key_id"></a> [kms\_key\_id](#input\_kms\_key\_id) | The ARN for the KMS encryption key. When specifying `kms_key_id`, `encrypted` needs to be set to **true**.<br>Note: Terraform must be running with credentials which have the `GenerateDataKeyWithoutPlaintext` permission on the specified KMS key<br>as required by the [EBS KMS CMK volume provisioning process](https://docs.aws.amazon.com/kms/latest/developerguide/services-ebs.html#ebs-cmk) to prevent a volume from being created and almost<br>immediately deleted. | `string` | `""` | no |
 | <a name="input_multi_attach_enabled"></a> [multi\_attach\_enabled](#input\_multi\_attach\_enabled) | Specifies whether to enable Amazon EBS Multi-Attach. Multi-Attach is supported on `io1` and `io2` volumes. | `bool` | `false` | no |
 | <a name="input_name"></a> [name](#input\_name) | Name of ebs volume | `string` | n/a | yes |
 | <a name="input_outpost_arn"></a> [outpost\_arn](#input\_outpost\_arn) | The Amazon Resource Name (ARN) of the Outpost | `string` | `""` | no |
@@ -101,7 +109,7 @@ No modules.
 
 ```hcl
 module "app_prod_bastion_label" {
-  source   = "cloudposse/label/null"
+  source  = "cloudposse/label/null"
   version = "v0.25.0"
 
   namespace  = "app"
@@ -117,14 +125,20 @@ module "app_prod_bastion_label" {
 }
 
 module "app_prod_bastion_ebs" {
-    source                      = "../../"
-    encrypted                   = true
-    name                        = join(module.app_prod_bastion_label.delimiter, [module.app_prod_bastion_label.stage, module.app_prod_bastion_label.name, var.name])
-    backup_ebs_iam_role_name    = join(module.app_prod_bastion_label.delimiter, [module.app_prod_bastion_label.stage, module.app_prod_bastion_label.name, var.iam_role_name])
-    backup_ebs_role_policy_name = join(module.app_prod_bastion_label.delimiter, [module.app_prod_bastion_label.stage, module.app_prod_bastion_label.name, var.policy_role_name])
-    availability_zone           = "${var.availability_zone}"
-    size                        = "${var.size}"
-    tags                        = module.app_prod_bastion_label.tags
+  source                      = "../../"
+  encrypted                   = true
+  name                        = join(module.app_prod_bastion_label.delimiter, [module.app_prod_bastion_label.stage, module.app_prod_bastion_label.name, var.name])
+  backup_ebs_iam_role_name    = join(module.app_prod_bastion_label.delimiter, [module.app_prod_bastion_label.stage, module.app_prod_bastion_label.name, var.iam_role_name])
+  backup_ebs_policy_role_name = join(module.app_prod_bastion_label.delimiter, [module.app_prod_bastion_label.stage, module.app_prod_bastion_label.name, var.policy_role_name])
+  availability_zone           = var.availability_zone
+  size                        = var.size
+  tags                        = module.app_prod_bastion_label.tags
 }
 ```
+
 <!-- END_TF_DOCS -->
+
+
+<!-- references -->
+
+[repo_link]: https://github.com/Infrastrukturait/terraform-aws-ebs-volume

@@ -1,7 +1,7 @@
 {
   "name": "terraform-aws-ebs-volume",
   "repo_url": "https://github.com/Infrastrukturait/terraform-aws-ebs-volume",
-  "license": "GPLv3",
+  "license": "MIT",
   "includes": [
     "docs/terraform.md"
   ],
@@ -17,6 +17,6 @@
     "## About",
     "Terraform module to create [AWS EBS (Elastic Block Storage)](https://aws.amazon.com/ebs/) volume with",
     "[DLM](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html) policy for automated snapshots as optional",
-    "This module support support volume encrypt with [KMS](https://aws.amazon.com/kms/) key 🔑" 
+    "This module support support volume encrypt with [KMS](https://aws.amazon.com/kms/) key 🔑"
   ]
 }
