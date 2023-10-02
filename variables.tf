@@ -1,6 +1,12 @@
 variable "name" {
   type        = string
-  description = "Name of ebs volume" 
+  description = "Name of ebs volume"
+}
+
+variable "create_name_suffix" {
+  type        = bool
+  description = "always add a random suffix in a resource name."
+  default     = true
 }
 
 variable "availability_zone" {
@@ -23,8 +29,8 @@ variable "encrypted" {
 variable "final_snapshot" {
   type        = bool
   default     = false
-  description =  <<EOT
-If true, snapshot will be created before volume deletion. 
+  description = <<EOT
+If true, snapshot will be created before volume deletion.
 Any tags on the volume will be migrated to the snapshot. **BE AWARE** by default is set to `false`.
 EOT
 }
@@ -73,19 +79,19 @@ variable "kms_key_id" {
   type        = string
   default     = ""
   description = <<EOT
-The ARN for the KMS encryption key. When specifying `kms_key_id`, `encrypted` needs to be set to **true**. 
-Note: Terraform must be running with credentials which have the `GenerateDataKeyWithoutPlaintext` permission on the specified KMS key 
-as required by the [EBS KMS CMK volume provisioning process](https://docs.aws.amazon.com/kms/latest/developerguide/services-ebs.html#ebs-cmk) to prevent a volume from being created and almost 
-immediately deleted. 
+The ARN for the KMS encryption key. When specifying `kms_key_id`, `encrypted` needs to be set to **true**.
+Note: Terraform must be running with credentials which have the `GenerateDataKeyWithoutPlaintext` permission on the specified KMS key
+as required by the [EBS KMS CMK volume provisioning process](https://docs.aws.amazon.com/kms/latest/developerguide/services-ebs.html#ebs-cmk) to prevent a volume from being created and almost
+immediately deleted.
 EOT
 }
 
-variable backup_ebs_period {
-  type = number
+variable "backup_ebs_period" {
+  type        = number
   description = "frequency of snapshot in hours (valid values are `1`, `2`, `3`, `4`, `6`, `8`, `12`, or `24`)"
-  default = 24
+  default     = 24
   validation {
-    condition = contains([1, 2, 3, 4, 6, 8, 12, 24], var.backup_ebs_period)
+    condition     = contains([1, 2, 3, 4, 6, 8, 12, 24], var.backup_ebs_period)
     error_message = "Invalid backup period."
   }
 }
@@ -96,26 +102,26 @@ variable "backup_ebs_iam_role_name" {
   default     = "dlm-lifecycle-role"
 }
 
-variable "backup_ebs_role_policy_name" {
+variable "backup_ebs_policy_role_name" {
   type        = string
   description = "The  role name for the DLM lifecyle policy"
-  default     = "dlm-lifecycle-policy"  
+  default     = "dlm-lifecycle-policy"
 }
 
 variable "backup_ebs_retention" {
-  type = number
+  type        = number
   description = "retention period in days"
-  default = 7
+  default     = 7
 }
 
 variable "backup_ebs_start_time" {
-  type = string
+  type        = string
   description = "start time in 24 hour format (default is a random time)"
-  default = ""
+  default     = ""
 }
 
 variable "tags" {
-  type = map(string)
+  type        = map(string)
   description = "extra tags"
-  default = {}
+  default     = {}
 }

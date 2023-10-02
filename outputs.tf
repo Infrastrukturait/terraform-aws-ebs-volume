@@ -1,6 +1,6 @@
 output "ebs_volume_id" {
   value       = aws_ebs_volume.this.id
-  description = "Elastic block storage volume id" 
+  description = "Elastic block storage volume id"
 }
 output "ebs_volume_arn" {
   value       = aws_ebs_volume.this.arn
@@ -19,5 +19,5 @@ output "dlm_role_id" {
 
 output "dlm_policy_id" {
   value       = concat(aws_iam_role_policy.dlm_lifecycle_policy.*.id, [""])[0]
-  description = "ID dlm lifecycle policy" 
+  description = "ID dlm lifecycle policy"
 }
