@@ -1,13 +1,24 @@
 locals {
-    iops                   = contains(["io1", "io2", "gp3"], var.type)  ? var.iops : 0
-    multi_attach_enabled   = contains(["io1", "io2"], var.type) ? var.multi_attach_enabled : false
+  iops                 = contains(["io1", "io2", "gp3"], var.type) ? var.iops : 0
+  multi_attach_enabled = contains(["io1", "io2"], var.type) ? var.multi_attach_enabled : false
+
+  ebs_name                    = var.create_name_suffix == true ? join("-", [var.name, random_string.name_suffix[0].result]) : var.name
+  backup_ebs_iam_role_name    = var.create_name_suffix == true ? join("-", [var.backup_ebs_iam_role_name, random_string.name_suffix[0].result]) : var.backup_ebs_iam_role_name
+  backup_ebs_policy_role_name = var.create_name_suffix == true ? join("-", [var.backup_ebs_policy_role_name, random_string.name_suffix[0].result]) : var.backup_ebs_policy_role_name
+}
+
+resource "random_string" "name_suffix" {
+  count   = var.create_name_suffix ? 1 : 0
+  special = false
+  upper   = false
+  length  = 8
 }
 
 
 resource "aws_ebs_volume" "this" {
   availability_zone    = var.availability_zone
   encrypted            = var.encrypted
-  final_snapshot        = var.final_snapshot
+  final_snapshot       = var.final_snapshot
   iops                 = local.iops
   multi_attach_enabled = local.multi_attach_enabled
   size                 = var.size
@@ -15,33 +26,33 @@ resource "aws_ebs_volume" "this" {
   outpost_arn          = var.outpost_arn
   type                 = var.type
   kms_key_id           = var.kms_key_id
-  tags                 = merge(
+  tags = merge(
     var.tags,
     {
-      Name = "${var.name}"
+      Name = local.ebs_name
     },
   )
 }
 
 
 locals {
-  volume_id       = aws_ebs_volume.this.id
-  random_start    = var.enable_backup && length(var.backup_ebs_start_time) == 0
+  volume_id    = aws_ebs_volume.this.id
+  random_start = var.enable_backup && length(var.backup_ebs_start_time) == 0
 }
 
-resource random_integer hour {
+resource "random_integer" "hour" {
   count = local.random_start ? 1 : 0
-  max = 23
-  min = 0
+  max   = 23
+  min   = 0
   keepers = {
     ebs_volume_id = local.volume_id
   }
 }
 
-resource random_integer minute {
+resource "random_integer" "minute" {
   count = local.random_start ? 1 : 0
-  max = 59
-  min = 0
+  max   = 59
+  min   = 0
   keepers = {
     ebs_volume_id = local.volume_id
   }
@@ -53,9 +64,9 @@ locals {
 }
 
 resource "aws_iam_role" "dlm_lifecycle_role" {
-  count               = var.enable_backup ? 1 : 0
-  name                = var.backup_ebs_iam_role_name
-  assume_role_policy  = <<EOF
+  count              = var.enable_backup ? 1 : 0
+  name               = local.backup_ebs_iam_role_name
+  assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -78,7 +89,7 @@ resource "aws_iam_role_policy" "dlm_lifecycle_policy" {
   name  = var.backup_ebs_role_policy_name
   role  = aws_iam_role.dlm_lifecycle_role[0].id
 
-  policy  = <<EOF
+  policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -113,13 +124,13 @@ resource "aws_dlm_lifecycle_policy" "backup" {
   policy_details {
     resource_types = ["VOLUME"]
     target_tags = {
-      Name = var.name
+      Name = local.ebs_name
     }
     schedule {
-      name = var.name
+      name = local.ebs_name
       create_rule {
         interval = var.backup_ebs_period
-        times = [local.backup_ebs_start]
+        times    = [local.backup_ebs_start]
       }
       retain_rule {
         count = local.retention_count
