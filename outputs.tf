@@ -20,5 +20,5 @@ output "dlm_role_id" {
 
 output "dlm_policy_id" {
   value       = try(aws_iam_role_policy.dlm_lifecycle_policy[0].id, "")
-  description = "ID dlm lifecycle policy" 
+  description = "ID dlm lifecycle policy"
 }
