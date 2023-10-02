@@ -59,8 +59,8 @@ resource "random_integer" "minute" {
 }
 
 locals {
-  backup_ebs_start = !local.random_start ? var.backup_ebs_start_time : format("%02d:%02d", random_integer.hour[0].result, random_integer.minute[0].result)
-  retention_count  = var.backup_ebs_retention * (24 / var.backup_ebs_period)
+  backup_ebs_start   = var.enable_backup && !local.random_start ? var.backup_ebs_start_time : format("%02d:%02d", random_integer.hour[0].result, random_integer.minute[0].result)
+  retention_count    = var.backup_ebs_retention * (24 / var.backup_ebs_period)
 }
 
 resource "aws_iam_role" "dlm_lifecycle_role" {
@@ -86,8 +86,8 @@ EOF
 # DLM lifecycle Policy
 resource "aws_iam_role_policy" "dlm_lifecycle_policy" {
   count = var.enable_backup ? 1 : 0
-  name  = local.backup_ebs_policy_role_name
-  role  = aws_iam_role.dlm_lifecycle_role.*.id
+  name  = var.backup_ebs_role_policy_name
+  role  = aws_iam_role.dlm_lifecycle_role[0].id
 
   policy = <<EOF
 {
@@ -117,8 +117,10 @@ EOF
 
 resource "aws_dlm_lifecycle_policy" "backup" {
   count              = var.enable_backup ? 1 : 0
-  description        = "${local.ebs_name} snapshots"
-  execution_role_arn = aws_iam_role.dlm_lifecycle_role.*.arn
+  execution_role_arn = aws_iam_role.dlm_lifecycle_role[0].arn
+
+  description        = "${var.name} snapshots"
+
   policy_details {
     resource_types = ["VOLUME"]
     target_tags = {
