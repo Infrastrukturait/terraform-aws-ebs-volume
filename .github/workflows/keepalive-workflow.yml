@@ -1,0 +1,21 @@
+name: Keepalive GitHub Actions
+on:
+  schedule:
+    - cron: "0 8 * * *"
+
+jobs:
+  cronjob-based-github-action:
+    name: Cronjob based github action
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Keepalive Github Actions trigger
+        uses: gautamkrishnar/keepalive-workflow@v1
+        with:
+          commit_message: Automated commit by Keepalive Workflow to keep the repository active
+          commit_options: '--no-verify --signoff'
+          committer_username: "github-actions[bot]"
+          committer_email: "41898282+github-actions[bot]@users.noreply.github.com"
