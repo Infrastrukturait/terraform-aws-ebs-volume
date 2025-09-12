@@ -1,21 +1,38 @@
-name: Keepalive GitHub Actions
+name: keepalive
 on:
-  schedule:
-    - cron: "0 8 * * *"
+  repository_dispatch:
+    types: [keepalive]
+  workflow_dispatch: {}
+
+permissions:
+  actions: write
+  contents: read
 
 jobs:
-  cronjob-based-github-action:
-    name: Cronjob based github action
+  reenable:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: Keepalive Github Actions trigger
-        uses: gautamkrishnar/keepalive-workflow@v1
-        with:
-          commit_message: Automated commit by Keepalive Workflow to keep the repository active
-          commit_options: '--no-verify --signoff'
-          committer_username: "github-actions[bot]"
-          committer_email: "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Authenticate gh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh auth status -h github.com || gh auth login --with-token <<<"$GITHUB_TOKEN"
+
+      - name: Enable all disabled workflows
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mapfile -t DISABLED < <(gh api \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${GITHUB_REPOSITORY}/actions/workflows \
+            --paginate --jq '.workflows[] | select(.state=="disabled_manually" or .state=="disabled_inactivity") | .path')
+          if [ ${#DISABLED[@]} -eq 0 ]; then
+            echo "No disabled workflows found."
+            exit 0
+          fi
+          printf 'Will enable:\n'; printf ' - %s\n' "${DISABLED[@]}"
+          for wf in "${DISABLED[@]}"; do
+            echo "Enabling: $wf"
+            gh api -X PUT "/repos/${GITHUB_REPOSITORY}/actions/workflows/${wf}/enable"
+          done
