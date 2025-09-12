@@ -1,0 +1,55 @@
+name: Workflow Keepalive
+description: Re-enable workflows (self or list)
+branding:
+  icon: activity
+  color: red
+inputs:
+  GITHUB_TOKEN:
+    required: false
+    description: GITHUB_TOKEN with actions: write (default: github.token)
+  workflows:
+    required: false
+    description: |
+      Newline-separated workflow file names to enable, e.g.:
+      ".github/workflows/build.yml\n.github/workflows/cron.yml".
+      If empty → enables the current workflow (self).
+runs:
+  using: composite
+  steps:
+    - name: Ensure gh is authenticated
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
+      run: |
+        gh auth status -h github.com || gh auth login --with-token <<<"${GITHUB_TOKEN}"
+
+    - name: Enable current workflow (self) if no list provided
+      if: ${{ !inputs.workflows }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
+      run: |
+        case "${GITHUB_WORKFLOW_REF:?}" in
+          "${GITHUB_REPOSITORY:?}"/.github/workflows/*.y*ml@*) ;;
+          *) echo "Not a repo workflow ref; aborting."; exit 1 ;;
+        esac
+        wf="${GITHUB_WORKFLOW_REF%%@*}"
+        wf="${wf#${GITHUB_REPOSITORY}/.github/workflows/}"
+        echo "Enabling self: $wf"
+        gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/${wf}/enable"
+
+    - name: Enable provided workflow list
+      if: ${{ inputs.workflows }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
+      run: |
+        echo "${{ inputs.workflows }}" | while IFS= read -r wf; do
+          [ -z "$wf" ] && continue
+          case "$wf" in
+            .github/workflows/*.y*ml) ;;
+            *) echo "Skip non-workflow path: $wf"; continue ;;
+          esac
+          echo "Enabling: $wf"
+          gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/${wf}/enable"
+        done
