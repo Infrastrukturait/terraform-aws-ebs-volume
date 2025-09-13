@@ -1,38 +1,68 @@
-name: keepalive
-on:
-  repository_dispatch:
-    types: [keepalive]
-  workflow_dispatch: {}
+name: Workflow Keepalive
+description: Re-enable workflows (self or list)
+branding:
+  icon: activity
+  color: red
+inputs:
+  GITHUB_TOKEN:
+    required: false
+    description: GITHUB_TOKEN with actions: write (default: github.token)
+  workflows:
+    required: false
+    description: |
+      Newline-separated workflow file names or paths to enable, e.g.:
+      ".github/workflows/build.yml\ncron.yml".
+      If empty → enables the current workflow (self).
+runs:
+  using: composite
+  steps:
+    - name: Ensure gh is authenticated
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
+      run: |
+        set -euo pipefail
+        gh auth status -h github.com || gh auth login --with-token <<<"${GH_TOKEN}"
 
-permissions:
-  actions: write
-  contents: read
+    - name: Enable current workflow (self) if no list provided
+      if: ${{ !inputs.workflows }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
+      run: |
+        set -euo pipefail
+        case "${GITHUB_WORKFLOW_REF:?}" in
+          "${GITHUB_REPOSITORY:?}"/.github/workflows/*.y*ml@*) ;;
+          *) echo "Not a valid repo workflow ref; aborting." >&2; exit 1 ;;
+        esac
+        wf="${GITHUB_WORKFLOW_REF%%@*}"
+        wf="${wf#${GITHUB_REPOSITORY}/.github/workflows/}"   # → "foo.yml"
+        enc="$(printf '%s' "$wf" | jq -sRr @uri)"
+        echo "Enabling self workflow: $wf"
+        gh api -X PUT \
+          -H "Accept: application/vnd.github+json" \
+          "/repos/${GITHUB_REPOSITORY}/actions/workflows/${enc}/enable" \
+          >/dev/null 2>&1 || { echo "Failed to enable $wf" >&2; exit 1; }
 
-jobs:
-  reenable:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Authenticate gh
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          gh auth status -h github.com || gh auth login --with-token <<<"$GITHUB_TOKEN"
-
-      - name: Enable all disabled workflows
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mapfile -t DISABLED < <(gh api \
+    - name: Enable provided workflow list
+      if: ${{ inputs.workflows }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
+      run: |
+        set -euo pipefail
+        echo "${{ inputs.workflows }}" | while IFS= read -r wf; do
+          [ -z "$wf" ] && continue
+          # Accept either full path or just file name
+          case "$wf" in
+            .github/workflows/*.y*ml) wf="${wf##*/}";;
+            *.y*ml) ;;
+            *) echo "Skipping non-workflow entry: $wf"; continue ;;
+          esac
+          enc="$(printf '%s' "$wf" | jq -sRr @uri)"
+          echo "Enabling workflow: $wf"
+          gh api -X PUT \
             -H "Accept: application/vnd.github+json" \
-            /repos/${GITHUB_REPOSITORY}/actions/workflows \
-            --paginate --jq '.workflows[] | select(.state=="disabled_manually" or .state=="disabled_inactivity") | .path')
-          if [ ${#DISABLED[@]} -eq 0 ]; then
-            echo "No disabled workflows found."
-            exit 0
-          fi
-          printf 'Will enable:\n'; printf ' - %s\n' "${DISABLED[@]}"
-          for wf in "${DISABLED[@]}"; do
-            echo "Enabling: $wf"
-            gh api -X PUT "/repos/${GITHUB_REPOSITORY}/actions/workflows/${wf}/enable"
-          done
+            "/repos/${GITHUB_REPOSITORY}/actions/workflows/${enc}/enable" \
+            >/dev/null 2>&1 || { echo "Failed to enable $wf" >&2; exit 1; }
+        done
