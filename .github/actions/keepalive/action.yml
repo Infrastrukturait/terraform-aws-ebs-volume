@@ -1,55 +1,188 @@
 name: Workflow Keepalive
-description: Re-enable workflows (self or list)
+description: Re-enable workflows disabled due to 30 days of inactivity
 branding:
   icon: activity
   color: red
+
 inputs:
   GITHUB_TOKEN:
     required: false
-    description: GITHUB_TOKEN with actions: write (default: github.token)
+    description: Token with actions:write. Defaults to github.token.
   workflows:
     required: false
     description: |
-      Newline-separated workflow file names to enable, e.g.:
-      ".github/workflows/build.yml\n.github/workflows/cron.yml".
-      If empty → enables the current workflow (self).
+      Newline-separated workflow paths, e.g.:
+      .github/workflows/build.yml
+      .github/workflows/cron.yml
+
 runs:
   using: composite
   steps:
-    - name: Ensure gh is authenticated
+    - name: Enable workflows
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
+        GH_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
       run: |
-        gh auth status -h github.com || gh auth login --with-token <<<"${GITHUB_TOKEN}"
+        set -uo pipefail
 
-    - name: Enable current workflow (self) if no list provided
-      if: ${{ !inputs.workflows }}
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
-      run: |
-        case "${GITHUB_WORKFLOW_REF:?}" in
-          "${GITHUB_REPOSITORY:?}"/.github/workflows/*.y*ml@*) ;;
-          *) echo "Not a repo workflow ref; aborting."; exit 1 ;;
-        esac
-        wf="${GITHUB_WORKFLOW_REF%%@*}"
-        wf="${wf#${GITHUB_REPOSITORY}/.github/workflows/}"
-        echo "Enabling self: $wf"
-        gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/${wf}/enable"
+        STARTED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+        RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
-    - name: Enable provided workflow list
-      if: ${{ inputs.workflows }}
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN || github.token }}
-      run: |
-        echo "${{ inputs.workflows }}" | while IFS= read -r wf; do
-          [ -z "$wf" ] && continue
-          case "$wf" in
-            .github/workflows/*.y*ml) ;;
-            *) echo "Skip non-workflow path: $wf"; continue ;;
+        enabled_count=0
+        failed_count=0
+        total_requested=0
+
+        ENABLED_JSON='[]'
+        FAILED_JSON='[]'
+
+        emit_item() {
+          local status="$1"
+          local workflow_ref="$2"
+          local message="$3"
+
+          jq -cn \
+            --arg kind "item" \
+            --arg status "$status" \
+            --arg workflow_ref "$workflow_ref" \
+            --arg message "$message" \
+            '{
+              kind: $kind,
+              status: $status,
+              workflow_ref: $workflow_ref,
+              message: $message
+            }' | sed 's/^/KEEPALIVE_ITEM /'
+        }
+
+        enable_one() {
+          local workflow_ref="$1"
+          total_requested=$((total_requested + 1))
+
+          if gh workflow enable "$workflow_ref" --repo "$GITHUB_REPOSITORY"; then
+            enabled_count=$((enabled_count + 1))
+            emit_item "success" "$workflow_ref" "workflow enabled"
+
+            ENABLED_JSON="$(
+              jq -c \
+                --arg workflow_ref "$workflow_ref" \
+                '. + [{ workflow_ref: $workflow_ref }]' <<<"$ENABLED_JSON"
+            )"
+          else
+            failed_count=$((failed_count + 1))
+            emit_item "error" "$workflow_ref" "failed to enable workflow"
+
+            FAILED_JSON="$(
+              jq -c \
+                --arg workflow_ref "$workflow_ref" \
+                --arg message "failed to enable workflow" \
+                '. + [{
+                  workflow_ref: $workflow_ref,
+                  message: $message
+                }]' <<<"$FAILED_JSON"
+            )"
+          fi
+        }
+
+        if [ -z "${{ inputs.workflows }}" ]; then
+          case "${GITHUB_WORKFLOW_REF:?}" in
+            "${GITHUB_REPOSITORY:?}"/.github/workflows/*.y*ml@*) ;;
+            *)
+              emit_item "error" "self" "invalid GITHUB_WORKFLOW_REF"
+              jq -cn \
+                --arg kind "result" \
+                --arg status "error" \
+                --arg repository "$GITHUB_REPOSITORY" \
+                --arg run_id "$GITHUB_RUN_ID" \
+                --arg run_url "$RUN_URL" \
+                --arg started_at "$STARTED_AT" \
+                --arg finished_at "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+                '{
+                  kind: $kind,
+                  status: $status,
+                  repository: $repository,
+                  run_id: $run_id,
+                  run_url: $run_url,
+                  started_at: $started_at,
+                  finished_at: $finished_at,
+                  total_requested: 1,
+                  enabled_count: 0,
+                  failed_count: 1,
+                  enabled: [],
+                  failed: [{ workflow_ref: "self", message: "invalid GITHUB_WORKFLOW_REF" }]
+                }' | sed 's/^/KEEPALIVE_RESULT /'
+              exit 1
+              ;;
           esac
-          echo "Enabling: $wf"
-          gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/${wf}/enable"
-        done
+
+          wf="${GITHUB_WORKFLOW_REF%%@*}"
+          wf="${wf#${GITHUB_REPOSITORY}/.github/workflows/}"
+
+          echo "Enabling self workflow: $wf"
+          enable_one "$wf"
+        else
+          while IFS= read -r wf; do
+            [ -z "$wf" ] && continue
+
+            case "$wf" in
+              .github/workflows/*.y*ml)
+                wf_file="${wf##*/}"
+                echo "Enabling workflow: $wf -> $wf_file"
+                enable_one "$wf_file"
+                ;;
+              *)
+                failed_count=$((failed_count + 1))
+                total_requested=$((total_requested + 1))
+                emit_item "error" "$wf" "invalid workflow path"
+
+                FAILED_JSON="$(
+                  jq -c \
+                    --arg workflow_ref "$wf" \
+                    --arg message "invalid workflow path" \
+                    '. + [{
+                      workflow_ref: $workflow_ref,
+                      message: $message
+                    }]' <<<"$FAILED_JSON"
+                )"
+                ;;
+            esac
+          done <<< "${{ inputs.workflows }}"
+        fi
+
+        if [ "$failed_count" -eq 0 ]; then
+          final_status="success"
+        elif [ "$enabled_count" -gt 0 ]; then
+          final_status="partial"
+        else
+          final_status="error"
+        fi
+
+        jq -cn \
+          --arg kind "result" \
+          --arg status "$final_status" \
+          --arg repository "$GITHUB_REPOSITORY" \
+          --arg run_id "$GITHUB_RUN_ID" \
+          --arg run_url "$RUN_URL" \
+          --arg started_at "$STARTED_AT" \
+          --arg finished_at "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+          --argjson total_requested "$total_requested" \
+          --argjson enabled_count "$enabled_count" \
+          --argjson failed_count "$failed_count" \
+          --argjson enabled "$ENABLED_JSON" \
+          --argjson failed "$FAILED_JSON" \
+          '{
+            kind: $kind,
+            status: $status,
+            repository: $repository,
+            run_id: $run_id,
+            run_url: $run_url,
+            started_at: $started_at,
+            finished_at: $finished_at,
+            total_requested: $total_requested,
+            enabled_count: $enabled_count,
+            failed_count: $failed_count,
+            enabled: $enabled,
+            failed: $failed
+          }' | sed 's/^/KEEPALIVE_RESULT /'
+
+        if [ "$failed_count" -gt 0 ]; then
+          exit 1
+        fi
