@@ -1,41 +1,36 @@
-
 # terraform-aws-ebs-volume
-
-[![WeSupportUkraine](https://raw.githubusercontent.com/Infrastrukturait/WeSupportUkraine/main/banner.svg)](https://github.com/Infrastrukturait/WeSupportUkraine)
 ## About
-Terraform module to create [AWS EBS (Elastic Block Storage)](https://aws.amazon.com/ebs/) volume with
-[DLM](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html) policy for automated snapshots as optional
-This module support support volume encrypt with [KMS](https://aws.amazon.com/kms/) key 🔑
-## License
 
+Terraform module to create [AWS EBS (Elastic Block Storage)](https://aws.amazon.com/ebs/) volume with
+
+[DLM](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html) policy for automated snapshots as optional
+
+This module support support volume encrypt with [KMS](https://aws.amazon.com/kms/) key 🔑
+
+
+## License
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ```text
 The MIT License (MIT)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+of this software and associated documentation files, to deal in the Software
+without restriction.
 
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
-Source: <https://opensource.org/licenses/MIT>
+Source: https://opensource.org/licenses/MIT
 ```
 See [LICENSE](LICENSE) for full details.
 ## Authors
+
 - Rafał Masiarek | [website](https://masiarek.pl) | [email](mailto:rafal@masiarek.pl) | [github](https://github.com/rafalmasiarek)
+
+
 <!-- BEGIN_TF_DOCS -->
 ## Documentation
 
@@ -130,6 +125,7 @@ module "app_prod_bastion_ebs" {
 ```
 
 <!-- END_TF_DOCS -->
+
 
 <!-- references -->
 
